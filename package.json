@@ -1,0 +1,16 @@
+{
+  "name": "cli_tool_projects",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Simple_Greeter.js",
+  "bin": {
+    "greeter": "./Simple_Greeter.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
