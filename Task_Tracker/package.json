@@ -1,0 +1,10 @@
+{
+  "name": "task-tracking-tool",
+  "version": "1.0.0",
+  "description": "A simple task-tracking CLI tool",
+  "type": "module",
+  "main": "Task_Tracker.js",
+  "bin": {
+    "tt": "./Task_Tracker.mjs"
+  }
+}
