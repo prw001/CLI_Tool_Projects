@@ -4,7 +4,8 @@
   "description": "",
   "main": "Simple_Greeter.js",
   "bin": {
-    "greeter": "./Simple_Greeter.js"
+    "greeter": "./Simple_Greeter.js",
+    "tt": "./Task_Tracker/Task_Tracker.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
