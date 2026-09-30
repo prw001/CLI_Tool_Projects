@@ -8,11 +8,15 @@ const validIdInputRegex = /^[\d]+$/;
 program
     .version('1.0.0')
     .description('A tool to create, update, and track ongoing tasks')
-    .option('-a, --add <Task>', 'Add a new task', null)
-    .option('-u, --update <args...>', 'Update a task <id> with <description>', null)
-    .option('-d, --delete <Task>', 'Delete a task', null)
-    .option('-i, --mark-in-progress <Task>', 'Mark a task as *in-progress*', null)
-    .option('-f, --mark-done <Task>', 'Mark a task as *done*', null)
+    .option('-a, --add <args...>', 'Add a new task', null)
+    .option('-u, --update-with-id <args...>', 'Update a task <id> with <description>', null)
+    .option('-U --update-at-index <args...>', 'Update a task at <index> with <description>', null)
+    .option('-d, --delete-with-id <Id>', 'Delete a task with <Id>', null)
+    .option('-D --delete-at-index <Idx>', 'Delete a task at <Idx>', null)
+    .option('-i, --mark-in-progress-with-id <Id>', 'Mark a task with <Id> as *in-progress*', null)
+    .option('-I, --mark-in-progress-at-index <Idx', 'Mark a task at <Idx> as *in-progress*', null)
+    .option('-f, --mark-done-with-id <Id>', 'Mark a task with <Id> as *done*', null)
+    .option('-F, --mark-done-at-index <Idx>', 'Mark a task at <Idx> as *done*', null)
     .option('-l, --list-tasks', 'Show the list of all tasks', null)
     .option('-p, --list-in-progress', 'Show a list of all in-progress tasks', null)
     .option('-c, --list-completed-tasks', 'Show a list of all completed tasks', null)
@@ -23,7 +27,7 @@ let taskList = [];
 
 async function loadTasks()
 {
-    console.log('Loading tasks...');
+    console.log(`\nLoading tasks...\n`);
     try {
         const data = await fs.readFile(taskPath, 'utf8');
         if (data.trim())
@@ -36,21 +40,12 @@ async function loadTasks()
     }
 }
 
-async function unpackTasks()
-{
-
-}
-
-async function packTasks()
-{
-
-}
-
 async function writeTasks()
 {
     console.log('Updating tasks...');
     try {
         await fs.writeFile(taskPath, JSON.stringify(taskList, null, 2), 'utf8');
+        console.log('Finished.');
     }
     catch (err) {
         console.error(`Failed to write tasks: ${err}`);
@@ -63,40 +58,18 @@ function getNewId()
     return taskList.length; //update this later, should grab a value recorded in the tasks.json file
 }
 
-class Task {
-    constructor(description)
-    {
-        this.desc = description;
-        this.id = getNewId();
-        this.inProgress = false;
-        this.isFinished = false;
-        this.createdAt = Date.now();
-        this.lastUpdated = Date.now();
-    }
-
-    updateDescription(newDesc)
-    {
-        this.desc = newDesc;
-        this.lastUpdated = Date.now();
-    }
-
-    setInProgress()
-    {
-        this.inProgress = true;
-        this.lastUpdated = Date.now();
-    }
-
-    haltProgress()
-    {
-        this.inProgress = false;
-        this.lastUpdated = Date.now();
-    }
-
-    finishTask()
-    {
-        this.isFinished = true;
-        this.haltProgress();
-    }
+function buildTask(description)
+{
+    const date = getDateString();
+    const task = {
+        id: Number(Date.now()),
+        desc: description,
+        inProgress: false,
+        isFinished: false,
+        createdAt: date,
+        lastUpdated: date
+    };
+    return task;
 }
 
 function getTask(id)
@@ -109,24 +82,55 @@ function getTaskIdx(id)
     return taskList.findIndex(a => a.id === Number(id));
 }
 
+function getDateString()
+{
+    const date = new Date();
+    return `${date.toDateString()} @ ${date.toTimeString()}`;
+}
+
+function getStatus(task)
+{
+    if (task.isFinished)
+    {
+        return `Completed`;
+    }
+    else if (task.inProgress)
+    {
+        return `In progress`;
+    }
+    return `Not started`;
+}
+
+//Formats a task object's data more nicely for printing in the console
+const displayTask = (task, idx) => {
+    let border = `------------------------------`;
+    let section = `*         *         *        *`;
+    const text = `${border}\nTASK: ${task.desc}\nIndex: ${idx} | ID: ${task.id}\n\n${section}\nStatus: ${getStatus(task)}\nCreated on: ${task.createdAt}\nLast updated: ${task.lastUpdated}\n\n${section}\n${border}\n`;
+    return text;
+}
+
 const handleOptions = () => {
     if (options.add)
     {
-        const nextTask = new Task(options.add);
-        taskList.push(nextTask);
-        console.log(taskList);
-        console.log(`Added new task: ${nextTask.desc}`);
+        if (options.add.length < 160)
+        {
+            const nextTask = buildTask(options.add.join(' '));
+            taskList.push(nextTask);
+            console.log(taskList);
+            console.log(`Added new task: ${nextTask.desc}`);
+        }
+        else
+        {
+            console.error(`Please provide a task description in less than 160 characters`);
+        }
     }
 
-    if (options.update)
+    if (options.updateWithId)
     {
         const arg1 = options.update[0];
         const arg2 = options.update.slice(1).join(' ');
         if (arg2.length <= 160)
         {
-            //TODO: fix the below bug, when reading in the tasks with JSON.parse, the class instances are not
-            //recreated, and so updateDescription() does not work.  Switch to just using objects and calling on
-            //their keys directly to update values.
             const task = getTask(arg1)
             if (task === -1)
             {
@@ -134,7 +138,8 @@ const handleOptions = () => {
             }
             else
             {
-                task.updateDescription(arg2);
+                task.desc = arg2;
+                task.lastUpdated = getDateString();
                 console.log(`Task successfully updated to: ${taskList[idx].desc}`);
             }
         }
@@ -144,7 +149,32 @@ const handleOptions = () => {
         }
     }
 
-    if (options.delete)
+    if (options.updateAtIndex)
+    {
+        const arg1 = Number(options.updateAtIndex[0]);
+        const arg2 = options.updateAtIndex.slice(1).join(' ');
+
+        if (arg1 > taskList.length - 1 || arg1 < 0)
+        {
+            console.error(`Must provide an index within bounds`);
+        }
+        else
+        {
+            if (arg2.length < 160)
+            {
+                const task = taskList[arg1];
+                task.desc = arg2;
+                task.lastUpdated = getDateString();
+                console.log(`Task successfully updated to: ${taskList[arg1].desc}`);
+            }
+            else
+            {
+                console.error(`Please provide a task description in less than 160 characters.`);
+            }
+        }
+    }
+
+    if (options.deleteWithId)
     {
         if (validIdInputRegex.test(options.delete))
         {
@@ -156,19 +186,88 @@ const handleOptions = () => {
             else
             {
                 const deleted = taskList.splice(idx, 1);
-                console.log(`Successfully removed task from list: ${deleted.desc}`);
+                console.log(`Successfully removed task from list: ${deleted[0].desc}`);
             }
         }
     }
 
-    if (options.markInProgress)
+    if (options.deleteAtIndex)
     {
-
+        if (options.deleteAtIndex > taskList.length - 1 || options.deleteAtIndex < 0)
+        {
+            console.error(`Must provide an index within bounds`);
+        }
+        else
+        {
+            const deleted = taskList.splice(options.deleteAtIndex, 1);
+            console.log(`Successfully removed task from list: ${deleted[0].desc}`);
+        }
     }
 
-    if (options.markDone)
+    if (options.markInProgressWithId)
     {
+        const task = getTask(options.markInProgressWithId);
+        if (task === -1)
+        {
+            console.error(`No task available with provided id: ${options.markInProgressWithId}`);
+        }
+        else
+        {
+            task.inProgress = true;
+            task.isFinished = false;
+            task.lastUpdated = getDateString();
+            console.log(`Successfully updated "${task.desc}" to: In progress`);
+        }
+    }
 
+    if(options.markInProgressAtIndex)
+    {
+        const idx = Number(options.markInProgressAtIndex);
+        if (idx > taskList.length - 1 || idx < 0)
+        {
+            console.error(`Must provide an index within bounds`);
+        }
+        else
+        {
+            let task = taskList[idx];
+            task.inProgress = true;
+            task.isFinished = false;
+            task.lastUpdated = getDateString();
+            console.log(`Successfully updated "${task.desc}" to: In progress`);
+        }
+    }
+
+    if (options.markDoneWithId)
+    {
+        let task = getTask(options.markDoneWithId);
+        if (task === -1)
+        {
+            console.error(`No task available with provided id: ${options.markInProgressWithId}`);
+        }
+        else
+        {
+            task.inProgress = false;
+            task.isFinished = true;
+            task.lastUpdated = getDateString();
+            console.log(`Successfully updated "${task.desc}" to: Completed`);
+        }
+    }
+
+    if (options.markDoneAtIndex)
+    {
+        const idx = Number(options.markDoneAtIndex);
+        if (idx > taskList.length - 1 || idx < 0)
+        {
+            console.error(`Must provide an index within bounds`);
+        }
+        else
+        {
+            let task = taskList[idx];
+            task.inProgress = false;
+            task.isFinished = true;
+            task.lastUpdated = getDateString();
+            console.log(`Successfully updated "${task.desc}" to: Completed`);
+        }
     }
 
     if (options.listTasks)
@@ -179,20 +278,20 @@ const handleOptions = () => {
         }
         else
         {
-            taskList.forEach(task => {
-                console.log(task);
-            });
+            taskList.forEach((task) => { console.log(displayTask(task, getTaskIdx(task.id))); });
         }
     }
 
     if (options.listInProgress)
     {
-
+        const inProgress = taskList.filter(task => task.inProgress === true);
+        inProgress.forEach((task) => { console.log(displayTask(task, getTaskIdx(task.id))) });
     }
 
     if (options.listCompletedTasks)
     {
-
+        const completed = taskList.filter(task => task.isFinished === true);
+        completed.forEach((task) => { console.log(displayTask(task, getTaskIdx(task.id))) });
     }
 }
 
