@@ -54,10 +54,10 @@ async function loadTasks()
 //writes all tasks objects to the tasks.json file
 async function writeTasks()
 {
-    console.log(`${pc.yellow('Updating tasks...')}`);
+    console.log(`${pc.yellow('\nUpdating tasks...\n')}`);
     try {
         await fs.writeFile(taskPath, JSON.stringify(taskList, null, 2), 'utf8');
-        console.log('Finished.');
+        console.log(pc.greenBright('Finished.'));
     }
     catch (err) {
         console.error(`${pc.redBright('Failed to write tasks:')} ${err}`);
@@ -113,7 +113,7 @@ function getStatus(task)
 const displayTask = (task, idx) => {
     const border = `------------------------------`;
     const section = `*         *         *        *`;
-    const text = `${border}\n${pc.blueBright('TASK:')} ${pc.blueBright(task.desc)}\nIndex: ${idx} | ID: ${task.id}\n\n${section}\nStatus: ${getStatus(task)}\nCreated on: ${task.createdAt}\nLast updated: ${task.lastUpdated}\n\n${section}\n${border}\n`;
+    const text = `${border}\n${pc.bgBlack(pc.italic(pc.whiteBright('TASK:')))} ${pc.bgBlue(pc.whiteBright(task.desc))}\nIndex: ${idx} | ID: ${task.id}\n\n${section}\nStatus: ${getStatus(task)}\nCreated on: ${task.createdAt}\nLast updated: ${task.lastUpdated}\n\n${section}\n${border}\n`;
     return text;
 }
 
@@ -184,12 +184,12 @@ const handleOptions = () => {
 
     if (options.deleteWithId)
     {
-        if (validIdInputRegex.test(options.delete))
+        if (validIdInputRegex.test(options.deleteWithId))
         {
-            const idx = getTaskIdx(options.delete)
+            const idx = getTaskIdx(options.deleteWithId)
             if (idx === -1)
             {
-                console.error(`${pc.redBright('No task available with provided id: ')}${options.delete}`);
+                console.error(`${pc.redBright('No task available with provided id: ')}${options.deleteWithId}`);
             }
             else
             {
@@ -250,7 +250,7 @@ const handleOptions = () => {
         let task = getTask(options.markDoneWithId);
         if (task === -1)
         {
-            console.error(`${pc.redBright('No task available with provided id: ')}${options.markInProgressWithId}`);
+            console.error(`${pc.redBright('No task available with provided id: ')}${options.markDoneWithId}`);
         }
         else
         {
@@ -295,14 +295,28 @@ const handleOptions = () => {
     if (options.listInProgress)
     {
         const inProgress = taskList.filter(task => task.inProgress === true);
-        inProgress.forEach((task) => { console.log(displayTask(task, getTaskIdx(task.id))) });
+        if (inProgress.length > 0)
+        {
+            inProgress.forEach((task) => { console.log(displayTask(task, getTaskIdx(task.id))) });
+        }
+        else
+        {
+            console.log(pc.yellow('No in-progress tasks to show'));
+        }
     }
 
     //print to the console all tasks marked as 'completed'
     if (options.listCompletedTasks)
     {
         const completed = taskList.filter(task => task.isFinished === true);
-        completed.forEach((task) => { console.log(displayTask(task, getTaskIdx(task.id))) });
+        if (completed.length > 0)
+        {
+            completed.forEach((task) => { console.log(displayTask(task, getTaskIdx(task.id))) });
+        }
+        else
+        {
+            console.log(pc.yellow('No completed tasks to show'));
+        }
     }
 }
 
