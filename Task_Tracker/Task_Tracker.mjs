@@ -2,6 +2,7 @@
 
 import {program} from 'commander';
 import fs from 'fs/promises';
+import pc from 'picocolors';
 const taskPath = './tasks.json';
 const validIdInputRegex = /^[\d]+$/;
 
@@ -28,7 +29,7 @@ let taskList = [];
 //attempts to read in serialized tasks from the tasks.json file
 async function loadTasks()
 {
-    console.log(`\nLoading tasks...\n`);
+    console.log(`\n${pc.yellow('Loading tasks...')}\n`);
     try {
 
         const data = await fs.readFile(taskPath, 'utf8');
@@ -40,12 +41,12 @@ async function loadTasks()
     catch (err) {
         if (err.code === 'ENOENT') //nonexistent file
         {
-            console.log(`No task file found, creating new task file at ${taskPath}\n`);
+            console.log(`No task file found, creating ${pc.blue('new')} task file at ${taskPath}\n`);
             await fs.appendFile(taskPath, '[]', 'utf8');
         }
         else
         {
-            console.error('Failed to load or parse tasks: ', err);
+            console.error(pc.redBright('Failed to load or parse tasks: '), err);
         }
     }
 }
@@ -53,13 +54,13 @@ async function loadTasks()
 //writes all tasks objects to the tasks.json file
 async function writeTasks()
 {
-    console.log('Updating tasks...');
+    console.log(`${pc.yellow('Updating tasks...')}`);
     try {
         await fs.writeFile(taskPath, JSON.stringify(taskList, null, 2), 'utf8');
         console.log('Finished.');
     }
     catch (err) {
-        console.error(`Failed to write tasks: ${err}`);
+        console.error(`${pc.redBright('Failed to write tasks:')} ${err}`);
         return;
     }
 }
@@ -99,20 +100,20 @@ function getStatus(task)
 {
     if (task.isFinished)
     {
-        return `Completed`;
+        return `${pc.green('Completed')}`;
     }
     else if (task.inProgress)
     {
-        return `In progress`;
+        return `${pc.yellow('In progress')}`;
     }
-    return `Not started`;
+    return `${pc.red('Not started')}`;
 }
 
 //Formats a task object's data for printing in the console
 const displayTask = (task, idx) => {
     const border = `------------------------------`;
     const section = `*         *         *        *`;
-    const text = `${border}\nTASK: ${task.desc}\nIndex: ${idx} | ID: ${task.id}\n\n${section}\nStatus: ${getStatus(task)}\nCreated on: ${task.createdAt}\nLast updated: ${task.lastUpdated}\n\n${section}\n${border}\n`;
+    const text = `${border}\n${pc.blueBright('TASK:')} ${pc.blueBright(task.desc)}\nIndex: ${idx} | ID: ${task.id}\n\n${section}\nStatus: ${getStatus(task)}\nCreated on: ${task.createdAt}\nLast updated: ${task.lastUpdated}\n\n${section}\n${border}\n`;
     return text;
 }
 
@@ -124,8 +125,7 @@ const handleOptions = () => {
         {
             const nextTask = buildTask(options.add.join(' '));
             taskList.push(nextTask);
-            console.log(taskList);
-            console.log(`Added new task: ${nextTask.desc}`);
+            console.log(`Added new task: ${pc.blueBright(nextTask.desc)}`);
         }
         else
         {
@@ -142,18 +142,18 @@ const handleOptions = () => {
             const task = getTask(arg1)
             if (task === -1)
             {
-                console.error(`No task available with provided id: ${options.update[0]}`);
+                console.error(`${pc.redBright('No task available with provided id: ')}${options.update[0]}`);
             }
             else
             {
                 task.desc = arg2;
                 task.lastUpdated = getDateString();
-                console.log(`Task successfully updated to: ${taskList[idx].desc}`);
+                console.log(`${pc.green('Task successfully updated to: ')}${pc.blueBright(taskList[idx].desc)}`);
             }
         }
         else
         {
-            console.error(`Please provide a task description in less than 160 characters.`);
+            console.error(`${pc.redBright('Please provide a task description in less than 160 characters.')}`);
         }
     }
 
@@ -164,7 +164,7 @@ const handleOptions = () => {
 
         if (arg1 > taskList.length - 1 || arg1 < 0)
         {
-            console.error(`Must provide an index within bounds`);
+            console.error(`${pc.redBright('Must provide an index within bounds')}`);
         }
         else
         {
@@ -173,11 +173,11 @@ const handleOptions = () => {
                 const task = taskList[arg1];
                 task.desc = arg2;
                 task.lastUpdated = getDateString();
-                console.log(`Task successfully updated to: ${taskList[arg1].desc}`);
+                console.log(`${pc.green('Task successfully updated to: ')}${pc.blueBright(taskList[arg1].desc)}`);
             }
             else
             {
-                console.error(`Please provide a task description in less than 160 characters.`);
+                console.error(`${pc.redBright('Please provide a task description in less than 160 characters.')}`);
             }
         }
     }
@@ -189,12 +189,12 @@ const handleOptions = () => {
             const idx = getTaskIdx(options.delete)
             if (idx === -1)
             {
-                console.error(`No task available with provided id: ${options.delete}`);
+                console.error(`${pc.redBright('No task available with provided id: ')}${options.delete}`);
             }
             else
             {
                 const deleted = taskList.splice(idx, 1);
-                console.log(`Successfully removed task from list: ${deleted[0].desc}`);
+                console.log(`${pc.green('Successfully removed task from list: ')}${pc.blueBright(deleted[0].desc)}`);
             }
         }
     }
@@ -203,12 +203,12 @@ const handleOptions = () => {
     {
         if (options.deleteAtIndex > taskList.length - 1 || options.deleteAtIndex < 0)
         {
-            console.error(`Must provide an index within bounds`);
+            console.error(`${pc.redBright('Must provide an index within bounds')}`);
         }
         else
         {
             const deleted = taskList.splice(options.deleteAtIndex, 1);
-            console.log(`Successfully removed task from list: ${deleted[0].desc}`);
+            console.log(`${pc.green('Successfully')} removed task from list: ${pc.blueBright(deleted[0].desc)}`);
         }
     }
 
@@ -217,14 +217,14 @@ const handleOptions = () => {
         const task = getTask(options.markInProgressWithId);
         if (task === -1)
         {
-            console.error(`No task available with provided id: ${options.markInProgressWithId}`);
+            console.error(`${pc.redBright('No task available with provided id: ')}${options.markInProgressWithId}`);
         }
         else
         {
             task.inProgress = true;
             task.isFinished = false;
             task.lastUpdated = getDateString();
-            console.log(`Successfully updated "${task.desc}" to: In progress`);
+            console.log(`${pc.green('Successfully updated ')}"${pc.blueBright(task.desc)}" to: ${pc.yellow('In progress')}`);
         }
     }
 
@@ -233,7 +233,7 @@ const handleOptions = () => {
         const idx = Number(options.markInProgressAtIndex);
         if (idx > taskList.length - 1 || idx < 0)
         {
-            console.error(`Must provide an index within bounds`);
+            console.error(`${pc.redBright('Must provide an index within bounds')}`);
         }
         else
         {
@@ -241,7 +241,7 @@ const handleOptions = () => {
             task.inProgress = true;
             task.isFinished = false;
             task.lastUpdated = getDateString();
-            console.log(`Successfully updated "${task.desc}" to: In progress`);
+            console.log(`${pc.green('Successfully updated ')}"${pc.blueBright(task.desc)}" to: ${pc.yellow('In progress')}`);
         }
     }
 
@@ -250,14 +250,14 @@ const handleOptions = () => {
         let task = getTask(options.markDoneWithId);
         if (task === -1)
         {
-            console.error(`No task available with provided id: ${options.markInProgressWithId}`);
+            console.error(`${pc.redBright('No task available with provided id: ')}${options.markInProgressWithId}`);
         }
         else
         {
             task.inProgress = false;
             task.isFinished = true;
             task.lastUpdated = getDateString();
-            console.log(`Successfully updated "${task.desc}" to: Completed`);
+            console.log(`${pc.green('Successfully updated ')}"${pc.blueBright(task.desc)}" to: ${pc.greenBright('Completed')}`);
         }
     }
 
@@ -266,7 +266,7 @@ const handleOptions = () => {
         const idx = Number(options.markDoneAtIndex);
         if (idx > taskList.length - 1 || idx < 0)
         {
-            console.error(`Must provide an index within bounds`);
+            console.error(`${pc.redBright('Must provide an index within bounds')}`);
         }
         else
         {
@@ -274,7 +274,7 @@ const handleOptions = () => {
             task.inProgress = false;
             task.isFinished = true;
             task.lastUpdated = getDateString();
-            console.log(`Successfully updated "${task.desc}" to: Completed`);
+            console.log(`${pc.green('Successfully updated ')}"${pc.blueBright(task.desc)}" to: ${pc.greenBright('Completed')}`);
         }
     }
 
@@ -283,7 +283,7 @@ const handleOptions = () => {
     {
         if (taskList.length === 0)
         {
-            console.log(`No tasks to show, add a task using the argument -a and a description`);
+            console.log(`${pc.yellow('No tasks to show, add a task using the argument -a and a description')}`);
         }
         else
         {
