@@ -25,6 +25,7 @@ program
 const options = program.opts();
 let taskList = [];
 
+//attempts to read in serialized tasks from the tasks.json file
 async function loadTasks()
 {
     console.log(`\nLoading tasks...\n`);
@@ -40,6 +41,7 @@ async function loadTasks()
     }
 }
 
+//writes all tasks objects to the tasks.json file
 async function writeTasks()
 {
     console.log('Updating tasks...');
@@ -77,6 +79,7 @@ function getTaskIdx(id)
     return taskList.findIndex(a => a.id === Number(id));
 }
 
+//returns a string in format: '<Day> <Month> <dd> <yyyy> @ <hh:mm:ss tz>'
 function getDateString()
 {
     const date = new Date();
@@ -96,14 +99,15 @@ function getStatus(task)
     return `Not started`;
 }
 
-//Formats a task object's data more nicely for printing in the console
+//Formats a task object's data for printing in the console
 const displayTask = (task, idx) => {
-    let border = `------------------------------`;
-    let section = `*         *         *        *`;
+    const border = `------------------------------`;
+    const section = `*         *         *        *`;
     const text = `${border}\nTASK: ${task.desc}\nIndex: ${idx} | ID: ${task.id}\n\n${section}\nStatus: ${getStatus(task)}\nCreated on: ${task.createdAt}\nLast updated: ${task.lastUpdated}\n\n${section}\n${border}\n`;
     return text;
 }
 
+//Handles all the CLI input options and their respective args
 const handleOptions = () => {
     if (options.add)
     {
@@ -265,6 +269,7 @@ const handleOptions = () => {
         }
     }
 
+    //print to the console a complete list of tasks
     if (options.listTasks)
     {
         if (taskList.length === 0)
@@ -277,12 +282,14 @@ const handleOptions = () => {
         }
     }
 
+    //print to the console all tasks marked as 'in progress'
     if (options.listInProgress)
     {
         const inProgress = taskList.filter(task => task.inProgress === true);
         inProgress.forEach((task) => { console.log(displayTask(task, getTaskIdx(task.id))) });
     }
 
+    //print to the console all tasks marked as 'completed'
     if (options.listCompletedTasks)
     {
         const completed = taskList.filter(task => task.isFinished === true);
