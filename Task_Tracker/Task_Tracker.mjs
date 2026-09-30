@@ -30,6 +30,7 @@ async function loadTasks()
 {
     console.log(`\nLoading tasks...\n`);
     try {
+
         const data = await fs.readFile(taskPath, 'utf8');
         if (data.trim())
         {
@@ -37,7 +38,15 @@ async function loadTasks()
         }
     }
     catch (err) {
-        console.error('Failed to load or parse tasks: ', err);
+        if (err.code === 'ENOENT') //nonexistent file
+        {
+            console.log(`No task file found, creating new task file at ${taskPath}\n`);
+            await fs.appendFile(taskPath, '[]', 'utf8');
+        }
+        else
+        {
+            console.error('Failed to load or parse tasks: ', err);
+        }
     }
 }
 
@@ -111,7 +120,7 @@ const displayTask = (task, idx) => {
 const handleOptions = () => {
     if (options.add)
     {
-        if (options.add.length < 160)
+        if (options.add.length <= 160 && options.add.length > 0)
         {
             const nextTask = buildTask(options.add.join(' '));
             taskList.push(nextTask);
@@ -128,7 +137,7 @@ const handleOptions = () => {
     {
         const arg1 = options.update[0];
         const arg2 = options.update.slice(1).join(' ');
-        if (arg2.length <= 160)
+        if (arg2.length <= 160 && arg2.length > 0)
         {
             const task = getTask(arg1)
             if (task === -1)
@@ -159,7 +168,7 @@ const handleOptions = () => {
         }
         else
         {
-            if (arg2.length < 160)
+            if (arg2.length <= 160 && arg2.length > 0)
             {
                 const task = taskList[arg1];
                 task.desc = arg2;
