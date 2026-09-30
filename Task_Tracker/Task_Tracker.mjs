@@ -53,11 +53,6 @@ async function writeTasks()
     }
 }
 
-function getNewId()
-{
-    return taskList.length; //update this later, should grab a value recorded in the tasks.json file
-}
-
 function buildTask(description)
 {
     const date = getDateString();
