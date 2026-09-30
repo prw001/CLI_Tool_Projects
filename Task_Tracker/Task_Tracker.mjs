@@ -34,7 +34,7 @@ async function loadTasks()
         const data = await fs.readFile(taskPath, 'utf8');
         if (data.trim())
         {
-            taskList = await JSON.parse(data);
+            taskList = JSON.parse(data);
         }
     }
     catch (err) {
